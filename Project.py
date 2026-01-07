@@ -22,68 +22,86 @@ products = {
     "B10": ["Bagel", 5.0]
 }
 
-# Suggestions: key item -> list of recommended product codes
+# Stock system code where all products consist of 10 stocks
+stock = {code: 10 for code in products}
+
+# Suggestions for all products for a good experience to the customer
 suggestions = {
-    "A7": ["B1"],       # Coffee -> suggest Biscuits
-    "B2": ["A7"],       # Cookies -> suggest Coffee
-    "A1": ["B6"],       # Coke -> suggest Cheetos
-    "A3": ["B8"],       # Sprite -> suggest Doritos
-    "A8": ["B6"]        # Strawberry Milk -> suggest Sandwich
+    "A1": ["B6"], "A2": ["B3"], "A3": ["B8"], "A4": ["B7"],
+    "A5": ["B5"], "A6": ["B2"], "A7": ["B1"], "A8": ["B5"],
+    "A9": ["B4"], "A10": ["B9"], "B1": ["A7"], "B2": ["A7"],
+    "B3": ["A1"], "B4": ["A9"], "B5": ["A4"], "B6": ["A1"],
+    "B7": ["A6"], "B8": ["A3"], "B9": ["A10"], "B10": ["A7"]
 }
 
-# Display vending machine menu
-print("---VENDING MACHINE MENU---")
-for code, info in products.items():  # Loop through each product
-    print(f"{code} - {info[0]} : {info[1]} SAR")  # Show code, name, price
+# Display menu
+print("--- VENDING MACHINE MENU ---")
+for code, info in products.items():
+    print(f"{code} - {info[0]} : {info[1]} SAR (Stock: {stock[code]})")
 
-# Initialize shopping cart and total price
-total_price = 0
 cart = []
+total_price = 0
 
-# Loop for selecting products
+# Product selection loop
 while True:
-    code = input("Enter product code: ").strip().upper()  # Get input and standardize it
+    code = input("Enter product code: ").strip().upper()
 
-    if code in products:  # Check if code exists
-        item_name = products[code][0]  # Get product name
-        item_price = products[code][1]  # Get product price
+    if code not in products:
+        print("Invalid product code. Try again.")
+        continue
 
-        cart.append(item_name)  # Add item to cart
-        total_price += item_price  # Add price to total
+    if stock[code] == 0:
+        print("Sorry, this item is out of stock.")
+        choice = input("Do you want to choose another item? (yes/no): ").strip().lower()
+        if choice == "yes":
+            continue
+        else:
+            break
 
-        print(f"Added: {item_name} - {item_price} SAR")  # Confirm addition
+    # This lets the user buy more than 1 of the selected product
+    while True:
+        try:
+            quantity = int(input("Enter quantity: "))
+            if quantity <= 0:
+                print("Quantity must be greater than 0.")
+            elif quantity > stock[code]:
+                print("Not enough stock available.")
+            else:
+                break
+        except ValueError:
+            print("Please enter a valid number.")
 
-        # Check for intelligent suggestion
-        if code in suggestions:
-            for suggested_code in suggestions[code]:
-                suggested_item = products[suggested_code][0]
-                suggested_price = products[suggested_code][1]
-                print(f"Suggestion: You might also want to buy {suggested_item} ({suggested_price} SAR)!")
+    item_name, item_price = products[code]
+    cart.append(f"{item_name} x{quantity}")
+    total_price += item_price * quantity
+    stock[code] -= quantity
 
-    else:
-        print("Invalid product code. Try again.")  # Error for wrong code
-        continue  # Go back to start of loop
+    print(f"Added {quantity} {item_name}(s)")
 
-    # Ask if user wants to buy another item
-    again = input("Do you want to purchase another item? (yes/no): ").strip().lower()
-    if again == "no":  # If no, exit the loop
+    # Shows suggestion
+    suggested_code = suggestions[code][0]
+    if stock[suggested_code] > 0:
+        suggested_item, suggested_price = products[suggested_code]
+        print(f"Suggestion: You might also like {suggested_item} ({suggested_price} SAR)")
+
+    again = input("Buy another item? (yes/no): ").strip().lower()
+    if again == "no":
         break
 
-# Displays final cart and the total price of the items
+# Shows the item in your cart and the total amount of it
 print("Your cart:", cart)
 print("Total amount:", total_price, "SAR")
 
-# Payment process with loop for insufficient amount
 while True:
-    amount = float(input("Please enter the amount to the machine: "))  # Get money from user
-
-    if amount >= total_price:
-        change = amount - total_price  # Calculate change if overpaid
-        print("Thank you for your purchase!")
-        if change > 0:
-            print("Your change is:", round(change, 2), "SAR")  # Return change
-        break  # Exit loop when enough money is entered
-    else:
-        shortage = total_price - amount
-        print("Insufficient amount! You are short by:", round(shortage, 2), "SAR")
-        print("Please enter additional amount.")
+    try:
+        amount = float(input("Insert money: "))
+        if amount >= total_price:
+            change = round(amount - total_price, 2)
+            print("Thank you for your purchase!")
+            if change > 0:
+                print("Your change is:", change, "SAR")
+            break
+        else:
+            print("Insufficient amount. Please add more money.")
+    except ValueError:
+        print("Please enter a valid number.")
